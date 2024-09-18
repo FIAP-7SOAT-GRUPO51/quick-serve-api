@@ -1,0 +1,43 @@
+name: Deploy to AWS Lambda
+
+on:
+  push:
+    branches:
+      - main  # Define em qual branch o deploy será feito (modifique conforme necessário)
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Node.js (use se estiver usando Node.js)
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14'  # Modifique conforme a versão de sua lambda
+
+    - name: Install dependencies
+      run: |
+        npm install  # ou `pip install` se estiver usando Python, ou outro gerenciador de pacotes
+      working-directory: ./lambda-folder # Modifique conforme a pasta onde está seu código
+
+    - name: Zip Lambda function
+      run: |
+        zip -r function.zip .  # Compactar o código da função
+      working-directory: ./lambda-folder
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1  # Modifique conforme a região da sua Lambda
+
+    - name: Deploy Lambda function
+      run: |
+        aws lambda update-function-code \
+          --function-name my-lambda-function \
+          --zip-file fileb://function.zip \
+          --publish
