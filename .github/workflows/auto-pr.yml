@@ -1,0 +1,37 @@
+name: Auto Create Pull Request for Feature Branches
+
+# Gatilho: Disparar o workflow quando houver commits em qualquer branch que inicie com "feature/"
+on:
+  push:
+    branches:
+      - 'feature/*'  # Isso vai monitorar todas as branches que começam com "feature/"
+
+jobs:
+  create-pull-request:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Faz o checkout do código do repositório
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      # Step 2: Configura o GitHub CLI
+      - name: Set up GitHub CLI
+        run: |
+          sudo apt-get install gh  # Instala o GitHub CLI
+          gh auth login --with-token <<< "${{ secrets.GITHUB_TOKEN }}"
+
+      # Step 3: Verifica se a branch começa com "feature/"
+      - name: Verify branch and create Pull Request
+        run: |
+          BRANCH=$(git rev-parse --abbrev-ref HEAD)
+
+          # Verifica se a branch é do tipo "feature/"
+          if [[ "$BRANCH" == feature/* ]]; then
+            echo "Branch $BRANCH is a feature branch. Creating PR to develop."
+            
+            # Cria o Pull Request automaticamente com base na branch "develop"
+            gh pr create --base develop --head $BRANCH --title "Auto PR from $BRANCH" --body "This PR was automatically created from $BRANCH to develop."
+          else
+            echo "Not a feature branch, skipping PR creation."
+          fi
